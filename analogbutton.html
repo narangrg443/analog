@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>analog button</title>
+  <style>
+    body {
+      margin: 0px;
+      padding: 0px;
+    }
+    canvas {
+      background: grey;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="840"height="330"></canvas>
+
+
+  <script>
+    let canvas = document.querySelector("canvas")
+    let ctx = canvas.getContext("2d");
+
+    class Button {
+      constructor(x, y, r, type) {
+        this.x = x;
+        this.y = y;
+        this.r = r;
+        this.id = null;
+        this.type = type;
+
+        this.dx = 0;
+        this.dy = 0;
+
+        if (type === undefined)this.type = "analog";
+
+
+        this.fillColor = "lightblue"
+
+        this.pressed = false;
+
+
+        //ourter circle
+        this.X = this.x;
+        this.Y = this.y;
+        this.R = this.r+20
+
+      }
+
+      draw() {
+
+        if (this.type == "analog") {
+
+          let X = this.X-this.x;
+          let Y = this.Y-this.y;
+
+          let active_dist = Math.sqrt((X*X)+(Y*Y));
+
+
+          if (active_dist > this.R) {
+
+
+            this.dx = X/active_dist;
+            this.dy = Y/active_dist;
+
+
+            let overlap = Math.abs(active_dist-this.R)
+
+            let overlapX = overlap*this.dx;
+            let overlapY = overlap*this.dy;
+
+            this.x += overlapX;
+            this.y += overlapY;
+
+          
+        }
+
+          ctx.beginPath();
+          //inner arc
+          ctx.save();
+          ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+          ctx.fillStyle = this.fillColor;
+          ctx.fill();
+          ctx.stroke();
+          ctx.closePath();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(this.X, this.Y, this.R, 0, Math.PI*2)
+          ctx.stroke();
+          ctx.closePath();
+
+
+        } else if (this.type == "button") {
+
+
+          ctx.beginPath();
+          ctx.arc(this.X, this.Y, this.R, 0, Math.PI*2)
+          ctx.stroke();
+          ctx.closePath();
+        
+
+      }
+
+    }
+
+
+
+    addEvent() {
+      canvas.addEventListener("touchstart", e=> {
+        e.preventDefault();
+        for (let i = 0; i < e.touches.length; i++) {
+          switch (this.type) {
+            case "analog": if (this.type === "analog") {
+              if (e.touches[i].clientX < canvas.width/2) {
+                this.x = e.touches[i].clientX;
+                this.y = e.touches[i].clientY;
+
+                this.id = e.touches[i].identifer;
+                this.pressed = true;
+              }
+            }break;
+            case "button":
+              if (e.touches[i].clientX <= this.x+this.r && e.touches[i].clientX >= this.x-this.r && e.touches[i].clientY <= this.y+this.r && e.touches[i].clientY >= this.y-this.r) {
+                this.x = e.touches[i].clientX;
+                this.y = e.touches[i].clientY;
+
+                this.id = e.touches[i].identifer;
+                this.pressed = true;
+              }
+              break;
+          }
+        }
+      })
+
+      canvas.addEventListener("touchmove",
+        e=> {
+
+          for (let i = 0; i < e.touches.length; i++) {
+
+            if (this.type == "analog" && e.touches[i].clientX<canvas.width/2) {
+              
+              this.x = e.touches[i].clientX;
+              this.y = e.touches[i].clientY;
+            }
+
+          }
+
+        })
+      canvas.addEventListener("touchend",
+        e=> {
+
+          // this.id=changedtouches[0].identifer;
+          for (let i = 0; i < e.changedTouches.length; i++) {
+
+
+            this.x = e.changedTouches[i].clientX;
+            this.y = e.changedTouches[i].clientY;
+
+            if (this.id == e.changedTouches[i].identifer) {
+              this.pressed = false;
+              if(this.type=="analog"){this.x=this.X;this.y=this.Y;}
+            }
+
+          }
+
+
+        })
+
+
+    }
+    drawText() {
+      ctx.fillText("x "+this.dx,
+        22,
+        22)
+      ctx.fillText("y "+this.dy,
+        22,
+        44)
+      ctx.fillText("pressed "+this.pressed,
+        22,
+        54)
+    }
+  }
+
+  let analog = new Button(150, 150, 60);
+  let A = [analog, new Button(400, 150, 40, "button")]
+
+
+  function animate() {
+    ctx.clearRect(0,
+      0,
+      canvas.width,
+      canvas.height);
+
+    analog.draw();
+    analog.drawText();
+
+    requestAnimationFrame(animate)
+  }
+
+  analog.addEvent();
+  animate();
+</script>
+</body>
+</html>
